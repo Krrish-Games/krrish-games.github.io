@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Github Games</title>
+    <link rel="stylesheet" href="Style.Css">
+</head>
+<body>
+    <header>
+        <h1>Welcome to Github Games</h1>
+    </header>
+    <main>
+        <section id="games">
+            <div class="header-hero">
+                <button id="games-toggle" class="btn" aria-expanded="false" aria-controls="games-list">
+                    <span class="kicker">Games</span>
+                    <span class="title animated-accent">Our Games</span>
+                </button>
+                <p>Explore our collection of exciting games hosted on GitHub.</p>
+            </div>
+
+            <div id="games-list" class="collapse" aria-hidden="true">
+                <ul class="links-list">
+                    <!-- Replace these sample links with your own GitHub game URLs -->
+                    <li class="link-item"><a href="maze.html">Play Maze Runner</a></li>
+                    <li class="link-item"><a href="shooter.html">Play Space Shooter</a></li>
+                    <li class="link-item"><a href="puzzle.html">Play Puzzle Quest</a></li>
+                </ul>
+            </div>
+
+            <!-- Game listings grid will go here -->
+            <div class="games-grid">
+                <!-- cards if any -->
+            </div>
+        </section>
+        <section id="about">
+            <h2>About Us</h2>
+            <p>Learn more about Github Games and our mission to provide fun and engaging games.</p>
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2026 Github Games. All rights reserved.</p>
+    </footer>
+    <script>
+        (function(){
+            const btn = document.getElementById('games-toggle');
+            const list = document.getElementById('games-list');
+            if(!btn || !list) return;
+            function openList(){
+                list.classList.add('show');
+                list.setAttribute('aria-hidden','false');
+                btn.setAttribute('aria-expanded','true');
+                list.style.maxHeight = list.scrollHeight + 'px';
+            }
+            function closeList(){
+                list.style.maxHeight = list.scrollHeight + 'px';
+                requestAnimationFrame(()=>{
+                    list.style.maxHeight = '0px';
+                });
+                list.classList.remove('show');
+                list.setAttribute('aria-hidden','true');
+                btn.setAttribute('aria-expanded','false');
+            }
+            btn.addEventListener('click', function(e){
+                e.stopPropagation();
+                const isOpen = btn.getAttribute('aria-expanded') === 'true';
+                if(isOpen) closeList(); else openList();
+            });
+            document.addEventListener('click', function(e){
+                if(!btn.contains(e.target) && !list.contains(e.target) && btn.getAttribute('aria-expanded') === 'true'){
+                    closeList();
+                }
+            });
+        })();
+    </script>
+</body>
+</html>

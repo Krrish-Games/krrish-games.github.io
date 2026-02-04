@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Maze Runner</title>
+  <link rel="stylesheet" href="Style.Css">
+  <style>body{padding:1.2rem;display:flex;flex-direction:column;align-items:center}canvas{background:linear-gradient(180deg,#071022,#091126);border-radius:10px}</style>
+</head>
+<body>
+  <a class="btn" href="Index.Html">← Back</a>
+  <h1 style="margin-top:.6rem">Maze Runner</h1>
+  <p>Use arrow keys or WASD to reach the green exit.</p>
+  <canvas id="maze" width="360" height="500"></canvas>
+  <script>
+    const canvas = document.getElementById('maze');
+    const ctx = canvas.getContext('2d');
+    const rows = 21, cols = 21; // odd numbers
+    const cell = Math.floor(canvas.width / cols);
+    let grid = [];
+
+    function makeGrid(){
+      grid = new Array(rows).fill(0).map(()=>new Array(cols).fill(1));
+      for(let r=1;r<rows;r+=2) for(let c=1;c<cols;c+=2) grid[r][c]=0;
+    }
+
+    function neighbors(r,c){
+      const n=[];
+      if(r>1) n.push([r-2,c]);
+      if(r<rows-2) n.push([r+2,c]);
+      if(c>1) n.push([r,c-2]);
+      if(c<cols-2) n.push([r,c+2]);
+      return n;
+    }
+
+    function carve(){
+      const stack = [[1,1]];
+      const visited = new Set(['1,1']);
+      while(stack.length){
+        const [r,c]=stack[stack.length-1];
+        const n = neighbors(r,c).filter(([nr,nc])=>!visited.has(nr+','+nc));
+        if(n.length===0){stack.pop();continue}
+        const [nr,nc] = n[Math.floor(Math.random()*n.length)];
+        grid[(r+nr)/2][(c+nc)/2]=0;
+        visited.add(nr+','+nc);
+        stack.push([nr,nc]);
+      }
+    }
+
+    let player = {r:1,c:1};
+    const exit = {r:rows-2,c:cols-2};
+
+    function draw(){
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
+        if(grid[r][c]===1) ctx.fillStyle='#ffd700'; else ctx.fillStyle='#0b2540';
+        ctx.fillRect(c*cell,r*cell,cell,cell);
+      }
+      // exit
+      ctx.fillStyle='#17c964'; ctx.fillRect(exit.c*cell+4,exit.r*cell+4,cell-8,cell-8);
+      // player
+      ctx.fillStyle='#ffd36b'; ctx.beginPath(); ctx.arc(player.c*cell+cell/2, player.r*cell+cell/2, cell/3,0,Math.PI*2); ctx.fill();
+    }
+
+    function tryMove(dr,dc){
+      const nr = player.r+dr, nc = player.c+dc;
+      if(nr<0||nr>=rows||nc<0||nc>=cols) return;
+      if(grid[nr][nc]===0){ player.r=nr; player.c=nc; draw(); checkWin(); }
+    }
+
+    function checkWin(){ if(player.r===exit.r && player.c===exit.c){ setTimeout(()=>alert('You escaped the maze!'),80); }}
+
+    makeGrid(); carve(); draw();
+
+    window.addEventListener('keydown', e=>{
+      const k=e.key.toLowerCase();
+      if(['arrowup','w'].includes(e.key.toLowerCase())) tryMove(-1,0);
+      if(['arrowdown','s'].includes(e.key.toLowerCase())) tryMove(1,0);
+      if(['arrowleft','a'].includes(e.key.toLowerCase())) tryMove(0,-1);
+      if(['arrowright','d'].includes(e.key.toLowerCase())) tryMove(0,1);
+    });
+  </script>
+</body>
+</html>

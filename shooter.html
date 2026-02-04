@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Space Shooter</title>
+  <link rel="stylesheet" href="Style.Css">
+  <style>body{padding:1.2rem;display:flex;flex-direction:column;align-items:center}canvas{background:linear-gradient(180deg,#001229,#04061a);border-radius:10px}</style>
+</head>
+<body>
+  <a class="btn" href="Index.Html">← Back</a>
+  <h1 style="margin-top:.6rem">Space Shooter</h1>
+  <p>Move with ← → or A/D. Press Space to shoot.</p>
+  <div id="hud" style="display:flex;align-items:center;gap:12px;margin-top:.6rem;margin-bottom:.6rem;flex-wrap:wrap">
+    <div id="hud-left" style="display:flex;align-items:center;gap:12px">
+      <span id="score">Score: 0</span>
+      <span id="highscore">High: 0</span>
+    </div>
+    <div id="health-wrap" style="flex:1;min-width:160px">
+      <div id="health-bar" style="width:100%;height:12px;background:rgba(255,255,255,0.06);border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,0.04)">
+        <div id="health-fill" style="width:100%;height:100%;background:linear-gradient(90deg,#ff7373,#ffd36b);transition:width .22s ease"></div>
+      </div>
+    </div>
+    <button id="respawn" class="btn" style="display:none">Respawn</button>
+    <div id="game-over" style="display:none;color:#ffd36b;font-weight:700"></div>
+  </div>
+  <canvas id="game" width="600" height="480"></canvas>
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width, h = canvas.height;
+    let player = {x: w/2, y: h-30, w:36, h:12, vx:0};
+    let bullets = [], enemies = [], score = 0, running = true;
+    const maxHealth = 3; let health = maxHealth;
+    const highKey = 'space_shooter_highscore';
+
+    const respawnBtn = document.getElementById('respawn');
+
+    function spawn(){ if(!running) return; const x = Math.random()*(w-40)+20; enemies.push({x:x,y:30+Math.random()*40,size:18,vy:0.6+Math.random()*0.6}); }
+
+    function updateHUD(){
+      document.getElementById('score').textContent = 'Score: ' + score;
+      const hs = Number(localStorage.getItem(highKey) || 0);
+      document.getElementById('highscore').textContent = 'High: ' + hs;
+      const pct = Math.max(0, Math.min(1, health / maxHealth)) * 100;
+      document.getElementById('health-fill').style.width = pct + '%';
+    }
+
+    function draw(){
+      ctx.clearRect(0,0,w,h);
+      // player
+      ctx.fillStyle = '#9be3ff'; ctx.fillRect(player.x-player.w/2, player.y-player.h/2, player.w, player.h);
+      // bullets
+      ctx.fillStyle = '#ffd36b'; bullets.forEach(b=> ctx.fillRect(b.x-2,b.y-8,4,8));
+      // enemies
+      ctx.fillStyle = '#ff7b7b';
+      enemies.forEach(e=>{ ctx.beginPath(); ctx.arc(e.x,e.y,e.size,0,Math.PI*2); ctx.fill(); });
+    }
+
+    function gameOver(){
+      running = false;
+      const prev = Number(localStorage.getItem(highKey) || 0);
+      const hs = Math.max(prev, score);
+      localStorage.setItem(highKey, hs);
+      document.getElementById('game-over').style.display = 'block';
+      document.getElementById('game-over').textContent = `Game over — Score: ${score} | High: ${hs}`;
+      respawnBtn.style.display = 'inline-block';
+      updateHUD();
+    }
+
+    function step(){
+      if(!running) return;
+      // physics
+      player.x += player.vx;
+      player.x = Math.max(18, Math.min(w-18, player.x));
+      bullets.forEach(b=> b.y -= 6);
+      enemies.forEach(e=> e.y += e.vy);
+
+      // bullets vs enemies collisions
+      for(let bi = bullets.length-1; bi >= 0; bi--){
+        const b = bullets[bi];
+        let removedBullet = false;
+        for(let ei = enemies.length-1; ei >= 0; ei--){
+          const e = enemies[ei];
+          if(Math.hypot(e.x - b.x, e.y - b.y) < e.size + 2){
+            enemies.splice(ei,1);
+            bullets.splice(bi,1);
+            score += 10;
+            removedBullet = true;
+            break;
+          }
+        }
+        if(!removedBullet && b.y < -10) bullets.splice(bi,1);
+      }
+
+      // enemies that pass the player reduce health
+      for(let i = enemies.length-1; i >= 0; i--){
+        if(enemies[i].y - enemies[i].size > h){
+          enemies.splice(i,1);
+          health -= 1;
+          if(health <= 0){ gameOver(); return; }
+          else updateHUD();
+        }
+      }
+
+      if(Math.random() < 0.02) spawn();
+      updateHUD();
+      draw();
+      requestAnimationFrame(step);
+    }
+
+    window.addEventListener('keydown', e=>{
+      const k = e.key.toLowerCase();
+      if(k === 'arrowleft' || k === 'a') player.vx = -6;
+      if(k === 'arrowright' || k === 'd') player.vx = 6;
+      if(e.code === 'Space'){ bullets.push({x: player.x, y: player.y - 16}); }
+    });
+    window.addEventListener('keyup', e=>{ const k = e.key.toLowerCase(); if(k === 'arrowleft' || k === 'arrowright' || k === 'a' || k === 'd') player.vx = 0; });
+
+    respawnBtn.addEventListener('click', ()=>{
+      // reset
+      bullets = []; enemies = []; score = 0; health = maxHealth; running = true;
+      document.getElementById('game-over').style.display = 'none';
+      respawnBtn.style.display = 'none';
+      updateHUD();
+      spawn(); spawn();
+      requestAnimationFrame(step);
+    });
+
+    // start
+    ctx.font = '14px Inter, system-ui'; updateHUD(); spawn(); spawn(); requestAnimationFrame(step);
+  </script>
+</body>
+</html>

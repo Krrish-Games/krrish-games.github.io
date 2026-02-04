@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Puzzle Quest</title>
+  <link rel="stylesheet" href="Style.Css">
+  <style>body{padding:1.2rem;display:flex;flex-direction:column;align-items:center}.board{display:grid;grid-template-columns:repeat(4,72px);gap:8px;margin-top:12px}.tile{width:72px;height:72px;background:linear-gradient(180deg,#17324a,#0f2b3f);display:flex;align-items:center;justify-content:center;border-radius:8px;color:#fff;font-weight:700;cursor:pointer;user-select:none}</style>
+</head>
+<body>
+  <a class="btn" href="Index.Html">← Back</a>
+  <h1 style="margin-top:.6rem">Puzzle Quest</h1>
+  <p>Click tiles to slide and order them 1→15.</p>
+  <div id="board" class="board"></div>
+  <script>
+    const boardEl = document.getElementById('board');
+    let tiles = [];
+    function init(){
+      tiles = Array.from({length:15}, (_,i)=>i+1).concat([null]);
+      shuffle(); render();
+    }
+    function shuffle(){
+      for(let i=tiles.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [tiles[i],tiles[j]]=[tiles[j],tiles[i]] }
+      if(!solvable()) shuffle();
+    }
+    function solvable(){
+      const arr = tiles.filter(Boolean);
+      let inv=0; for(let i=0;i<arr.length;i++) for(let j=i+1;j<arr.length;j++) if(arr[i]>arr[j]) inv++;
+      const blankRow = Math.floor(tiles.indexOf(null)/4)+1;
+      return ((inv + blankRow) % 2) === 0;
+    }
+    function render(){
+      boardEl.innerHTML='';
+      tiles.forEach((v,i)=>{
+        const el=document.createElement('div'); el.className='tile';
+        if(v===null){ el.style.visibility='hidden'; } else { el.textContent=v }
+        el.addEventListener('click', ()=>tryMove(i));
+        boardEl.appendChild(el);
+      })
+    }
+    function tryMove(i){
+      const empty = tiles.indexOf(null);
+      const r1=Math.floor(i/4), c1=i%4, r2=Math.floor(empty/4), c2=empty%4;
+      if(Math.abs(r1-r2)+Math.abs(c1-c2)===1){ tiles[empty]=tiles[i]; tiles[i]=null; render(); checkWin(); }
+    }
+    function checkWin(){ if(tiles.slice(0,15).every((v,i)=>v===i+1)) setTimeout(()=>alert('You solved the puzzle!'),60); }
+    init();
+  </script>
+</body>
+</html>
